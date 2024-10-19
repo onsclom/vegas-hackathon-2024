@@ -1,16 +1,22 @@
 ---
+import Layout from "../Layout.astro"
 
+const submissions = [
+  { title: 'Hello World', id: 123 },
+  { title: 'testttingg', id: 123 },
+  { title: 'OK cool',  id: 123 },
+]
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+  <h1>unnamed project</h1>
+	<a href="/create">[+ CREATE NEW]</a>
+
+	<div>
+    {submissions.map(submission => (
+      <div>
+        <a href={`/submission/${submission.id}`}>{submission.title}</a>
+      </div>
+    ))}
+	</div>
+</Layout>

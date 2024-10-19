@@ -1,0 +1,29 @@
+---
+import PixelArtEditor from '../pixel-art-editor.astro'
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro</title>
+		<style>
+  		html {
+        font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+  		}
+      body {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+		</style>
+	</head>
+	<body>
+	  <h1>Create</h1>
+		<PixelArtEditor/>
+
+		<button>SUBMIT</button>
+	</body>
+</html>
