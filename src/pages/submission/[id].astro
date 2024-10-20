@@ -1,9 +1,154 @@
 ---
-import Layout from "../../Layout.astro";
-
-const { id } = Astro.params;
+import Layout from "../../layout.astro";
 ---
 
 <Layout>
-  <h1>Post {id}</h1>
+  <a href="/">back</a>
+  <h1>🔍 submission</h1>
+  <div class="submissionDiv"></div>
+  <script>
+    import { colorPalette } from "../../constants.ts";
+    const url = new URL(window.location.href);
+    const id = url.pathname.split("/").pop();
+    const art = (await (await fetch(`/api/submission/${id}`)).json()) as {
+      uuid: string;
+      pixels: number[];
+    };
+    const dimensionSize = 128
+
+    const canvas = document.createElement("canvas");
+    canvas.width = dimensionSize;
+    canvas.height = dimensionSize;
+    canvas.style.width = "500px"
+    canvas.style.height = "500px"
+    canvas.style.imageRendering = "pixelated";
+    canvas.style.margin = "auto";
+    canvas.style.display = "block";
+    canvas.style.viewTransitionName = `canvas-${art.uuid}`
+    const submissionDiv =  document.querySelector(".submissionDiv")!
+    submissionDiv.appendChild(canvas);
+
+    {
+      const colorWarButton = document.createElement("button");
+      colorWarButton.style.margin = "auto";
+      colorWarButton.style.display = "block";
+      colorWarButton.style.marginTop = "1rem"
+      submissionDiv.appendChild(colorWarButton)
+      let colorWarInterval = null as null | number;
+
+      colorWarButton.addEventListener("click", async () => {
+        if (colorWarInterval) {
+          clearInterval(colorWarInterval);
+          colorWarInterval = null;
+          colorWarButton.textContent = "start color war"
+          return;
+        }
+
+        colorWarInterval = setInterval(() => {
+          const chunkAmt = 300
+          for (let i=0; i<chunkAmt; i++) {
+            const x = Math.floor(Math.random() * 128)
+            const y = Math.floor(Math.random() * 128)
+            const color = art.pixels[y * 128 + x]!
+            const neighbors = [
+              [x - 1, y],
+              [x + 1, y],
+              [x, y - 1],
+              [x, y + 1],
+            ].filter(([x, y]) => x >= 0 && x < 128 && y >= 0 && y < 128)
+            const neighbor = neighbors[Math.floor(Math.random() * neighbors.length)]
+            neighbors.forEach(([x, y]) => {
+              art.pixels[y * 128 + x] = color
+            })
+          }
+        },10)
+      })
+
+      const sortButton = document.createElement("button");
+      sortButton.style.margin = "auto";
+      sortButton.style.display = "block";
+      sortButton.style.marginTop = "1rem"
+      submissionDiv.appendChild(sortButton)
+      let sortInterval = null as null | number;
+
+      sortButton.addEventListener("click", async () => {
+        if (sortInterval) {
+          clearInterval(sortInterval);
+          sortInterval = null;
+          colorWarButton.textContent = "start color war"
+          return;
+        }
+
+        sortInterval = setInterval(() => {
+          for (let i=1000000; i>=0; i--) {
+            // pick random index
+            const index = Math.floor(Math.random() * 128 * 128)
+
+            // compare it with next
+            const next = index+1
+            if (next >= 128 * 128) {
+              continue
+            }
+
+            // if it's bigger, swap
+            if (art.pixels[index] > art.pixels[next]) {
+              const temp = art.pixels[index]
+              art.pixels[index] = art.pixels[next]
+              art.pixels[next] = temp
+            }
+          }
+
+          // if sorted, stop
+          const everyPixelSorted = art.pixels.every((color, i) => {
+            if (i === 0) {
+              return true
+            }
+            return color >= art.pixels[i-1]
+          })
+          if (everyPixelSorted) {
+            clearInterval(sortInterval);
+            sortInterval = null;
+          }
+
+
+        },10)
+      });
+
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { throw new Error("failed to get ctx"); }
+      (function draw() {
+        if (colorWarInterval !== null) {
+          colorWarButton.textContent = "stop"
+          colorWarButton.style.backgroundColor = "#f88"
+        } else {
+          colorWarButton.textContent = "start color war"
+          colorWarButton.style.backgroundColor = "#8f8"
+        }
+
+        if (sortInterval !== null) {
+          sortButton.textContent = "stop"
+          sortButton.style.backgroundColor = "#f88"
+        } else {
+          sortButton.textContent = "start sort"
+          sortButton.style.backgroundColor = "#8f8"
+        }
+
+        art.pixels.forEach((color, i) => {
+          const x = i % 128;
+          const y = Math.floor(i / 128);
+          ctx.fillStyle = colorPalette[color]!;
+          ctx.fillRect(
+            (x * canvas.width) / 128,
+            (y * canvas.height) / 128,
+            canvas.width / 128,
+            canvas.height / 128
+          );
+        });
+        requestAnimationFrame(draw);
+      })()
+
+
+    }
+  </script>
 </Layout>

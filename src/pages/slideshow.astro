@@ -1,0 +1,81 @@
+---
+import Layout from '../layout.astro'
+---
+
+<Layout>
+  <a href="/">back</a>
+  <h1>🎥 slideshow</h1>
+  <div class="slideshow-div"></div>
+  <script>
+    import { colorPalette } from "../constants.ts";
+
+    const art = (await (await fetch("/api/art")).json()) as {
+      uuid: string;
+      pixels: number[];
+    }[];
+    // shuffle art
+    for (let i = art.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [art[i], art[j]] = [art[j], art[i]];
+    }
+
+    const cur = Array(128 * 128).fill(0);
+
+    const dimensionSize = 128
+    const canvas = document.createElement("canvas");
+    canvas.width = dimensionSize;
+    canvas.height = dimensionSize;
+    canvas.style.width = "500px"
+    canvas.style.height = "500px"
+    canvas.style.imageRendering = "pixelated";
+    canvas.style.margin = "auto";
+    canvas.style.display = "block";
+    const slideshowDiv =  document.querySelector(".slideshow-div")!
+    slideshowDiv.appendChild(canvas);
+
+    const fullscreenButton = document.createElement("button");
+    fullscreenButton.textContent = "fullscreen";
+    fullscreenButton.onclick = () => {
+      canvas.requestFullscreen();
+    }
+    fullscreenButton.style.display = "block";
+    fullscreenButton.style.margin = "auto";
+    fullscreenButton.style.marginTop = "10px";
+    slideshowDiv.appendChild(fullscreenButton);
+
+
+    {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { throw new Error("failed to get ctx"); }
+      (function draw() {
+        cur.forEach((color, i) => {
+          const x = i % 128;
+          const y = Math.floor(i / 128);
+          ctx.fillStyle = colorPalette[color]!;
+          ctx.fillRect(
+            (x * canvas.width) / 128,
+            (y * canvas.height) / 128,
+            canvas.width / 128,
+            canvas.height / 128
+          );
+        });
+        requestAnimationFrame(draw);
+      })()
+
+      window.setInterval(() => {
+        const chunkSize = 1000;
+        const time = performance.now()
+        const timePerPiece = 5000
+        const curTarget = Math.floor(time / timePerPiece) % art.length
+
+        for (let i=0; i < chunkSize; i++) {
+          const randX = Math.floor(Math.random() * 128);
+          const randY = Math.floor(Math.random() * 128);
+          cur[randY * 128 + randX] = art[curTarget]!.pixels[randY * 128 + randX];
+        }
+      }, 10);
+    }
+
+
+  </script>
+</Layout>

@@ -1,22 +1,63 @@
 ---
-import Layout from "../Layout.astro"
-
-const submissions = [
-  { title: 'Hello World', id: 123 },
-  { title: 'testttingg', id: 123 },
-  { title: 'OK cool',  id: 123 },
-]
+import Layout from "../layout.astro";
 ---
-
 <Layout>
-  <h1>unnamed project</h1>
-	<a href="/create">[+ CREATE NEW]</a>
+  <h1>🏠 home</h1>
+  <div style="display: flex; gap: 1rem">
+    <a href="/create">
+      🎨 make drawing
+    </a>
+    <a href="/slideshow">
+      🎥 view slide show
+    </a>
+  </div>
+  <div style="height: 2rem"></div>
+  <div class="art-area"></div>
+  <script>
+    import { colorPalette } from "../constants.ts";
+    const art = (await (await fetch("/api/art")).json()) as {
+      uuid: string;
+      pixels: number[];
+    }[];
+    const container = document.querySelector(".art-area") as HTMLDivElement;
+    container.style.display = "flex";
+    container.style.flexWrap = "wrap";
+    container.style.justifyContent = "center";
+    container.style.gap = "10px";
 
-	<div>
-    {submissions.map(submission => (
-      <div>
-        <a href={`/submission/${submission.id}`}>{submission.title}</a>
-      </div>
-    ))}
-	</div>
+    // shuffle art
+    for (let i = art.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [art[i], art[j]] = [art[j], art[i]];
+    }
+
+    art.forEach((data) => {
+      const thumbnailSize = 200;
+      const canvas = document.createElement("canvas");
+      canvas.style.width = thumbnailSize + "px";
+      canvas.style.height = thumbnailSize + "px";
+      canvas.width = 128;
+      canvas.height = 128;
+      canvas.style.imageRendering = "pixelated";
+      canvas.style.viewTransitionName = `canvas-${data.uuid}`
+      canvas.onclick = () => {
+        window.location.href = `/submission/${data.uuid}`;
+      };
+      canvas.style.cursor = "pointer";
+      container.appendChild(canvas);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { throw new Error("failed to get ctx"); }
+      data.pixels.forEach((color, i) => {
+        const x = i % 128;
+        const y = Math.floor(i / 128);
+        ctx.fillStyle = colorPalette[color]!;
+        ctx.fillRect(
+          (x * canvas.width) / 128,
+          (y * canvas.height) / 128,
+          canvas.width / 128,
+          canvas.height / 128
+        );
+      });
+    });
+  </script>
 </Layout>
